@@ -1,0 +1,9 @@
+version: "3.3"
+
+services:
+  client:
+    build: .
+    env_file:
+    - .env
+    ports:
+    - 6667:6667

@@ -1,7 +1,9 @@
 FROM python:latest
 WORKDIR /usr/local/bin
 COPY . .
-CMD ["client.py"]
+RUN ["ls", "-ll"]
+RUN ["python", "--version"]
+CMD ["python", "client.py"]
 
 
 
