@@ -4,13 +4,9 @@ import websockets
 import os
 
 async def hello(websocket, path):
-    name = await websocket.recv()
-    print(f"< {name}")
-
-    greeting = f"Hello {name}!"
-
-    await websocket.send(greeting)
-    print(f"> {greeting}")
+    while True:
+        msg = await websocket.recv()
+        print(f"> {msg}")
 
 start_server = websockets.serve(hello, "0.0.0.0", 42069)
 asyncio.get_event_loop().run_until_complete(start_server)

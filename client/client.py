@@ -5,8 +5,7 @@ import websockets
 
 async def create_websocket(server):
     uri = f"ws://{server}:42069"
-    async with websockets.connect(uri) as websocket:
-        return websocket
+    return await websockets.connect(uri) 
 
 def log(string): 
     print(string, flush=True)
@@ -34,7 +33,6 @@ if "SERVER" not in os.environ:
     missing_env_var("SERVER")
 
 SERVER = os.environ["SERVER"]
-asyncio.get_event_loop().run_until_complete(hello(SERVER))
 
 TOKEN = os.environ["TWITCH_OAUTH_TOKEN"]
 
@@ -71,11 +69,11 @@ def pong(server):
 def send_message(server, msg):
     server.send(bytes("PRIVMSG " + f"#{CHANNEL}" + " :" + msg + "\r\n", ENCODING))
 
-def _is_command_msg(msg):
+def is_command_msg(msg):
     return msg[0] == COMMAND_TRIGGER and msg[1] != COMMAND_TRIGGER
 
-def run_command(user, cmd):
-    print(f"{user}: {cmd}")
+def run_command(websocket, user, cmd):
+    return
 
 def process_msg(irc_response):
     # TODO: improve the specificity of detecting Pings
@@ -85,12 +83,11 @@ def process_msg(irc_response):
     split_response = irc_response.split()
 
     if len(split_response) < 4:
-        return
+        return None, None
 
     user, msg = _parse_user_and_msg(irc_response)
+    return user, msg
 
-    if _is_command_msg(msg):
-        run_command(user, msg)
 
 # TODO: refactor this sillyness
 def _parse_user_and_msg(irc_response):
@@ -103,9 +100,9 @@ def _parse_user_and_msg(irc_response):
     return user, msg
 
 
-def run_bot(server):
+async def run_bot(server):
     chat_buffer = ""
-    websocket = await create_websocket()
+    websocket = await create_websocket(SERVER)
 
     while True:
         chat_buffer = chat_buffer + server.recv(2048).decode("utf-8")
@@ -113,13 +110,16 @@ def run_bot(server):
         chat_buffer = messages.pop()
 
         for message in messages:
-            process_msg(message)
+            user, msg = process_msg(message)
+            if user is not None and is_command_msg(msg):
+                run_command(user, msg)
 
+async def main():
+    server = _connect_to_twitch()
+    await run_bot(server)
 
 if __name__ == "__main__":
-    server = _connect_to_twitch()
-    print(f"DO I SEE THIS?", flush=True)
-    send_message(server, "Hi @beastco")
-    print(f"DO I SEE THIS?", flush=True)
-    run_bot(server)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+
 
