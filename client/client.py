@@ -1,7 +1,15 @@
 import socket
 import os
+import asyncio
+import websockets
 
-print("return server")
+async def create_websocket(server):
+    uri = f"ws://{server}:42069"
+    async with websockets.connect(uri) as websocket:
+        return websocket
+
+def log(string): 
+    print(string, flush=True)
 
 def missing_env_var(var_name):
     raise ValueError(
@@ -22,6 +30,11 @@ if "BOT_NAME" not in os.environ:
 if "CHANNEL" not in os.environ:
     missing_env_var("CHANNEL")
 
+if "SERVER" not in os.environ:
+    missing_env_var("SERVER")
+
+SERVER = os.environ["SERVER"]
+asyncio.get_event_loop().run_until_complete(hello(SERVER))
 
 TOKEN = os.environ["TWITCH_OAUTH_TOKEN"]
 
@@ -36,7 +49,6 @@ ENCODING = "utf-8"
 # Define your own trigger for commands:
 COMMAND_TRIGGER = "!"
 
-print("next to comment outs")
 def _handshake(server):
     print(f"Connecting to #{CHANNEL} as {BOT_NAME}")
     print(server.send(bytes("PASS " + TOKEN + "\r\n", ENCODING)))
@@ -45,15 +57,10 @@ def _handshake(server):
 
 
 def _connect_to_twitch():
-    print("Connecting")
     connection_data = ("irc.chat.twitch.tv", 6667)
-    print("creating server socket")
     server = socket.socket()
-    print("connecting")
     server.connect(connection_data)
-    print("_handshake")
     _handshake(server)
-    print("return server")
     return server
 
 
@@ -62,11 +69,13 @@ def pong(server):
 
 
 def send_message(server, msg):
-    server.send(bytes("PRIVMSG " + f"#{CHANNEL}" + " :" + msg + "\n", ENCODING))
+    server.send(bytes("PRIVMSG " + f"#{CHANNEL}" + " :" + msg + "\r\n", ENCODING))
 
 def _is_command_msg(msg):
     return msg[0] == COMMAND_TRIGGER and msg[1] != COMMAND_TRIGGER
 
+def run_command(user, cmd):
+    print(f"{user}: {cmd}")
 
 def process_msg(irc_response):
     # TODO: improve the specificity of detecting Pings
@@ -81,10 +90,7 @@ def process_msg(irc_response):
     user, msg = _parse_user_and_msg(irc_response)
 
     if _is_command_msg(msg):
-        print(f"We want to run command {msg}")
-    else:
-        print(f"{user}: {msg}")
-
+        run_command(user, msg)
 
 # TODO: refactor this sillyness
 def _parse_user_and_msg(irc_response):
@@ -99,12 +105,11 @@ def _parse_user_and_msg(irc_response):
 
 def run_bot(server):
     chat_buffer = ""
+    websocket = await create_websocket()
 
     while True:
-        print("HELLO, I am true!")
         chat_buffer = chat_buffer + server.recv(2048).decode("utf-8")
         messages = chat_buffer.split("\r\n")
-        print("Messages, ", messages)
         chat_buffer = messages.pop()
 
         for message in messages:
@@ -113,7 +118,8 @@ def run_bot(server):
 
 if __name__ == "__main__":
     server = _connect_to_twitch()
-    send_message(server, "Hello")
-    # run_bot(server)
+    print(f"DO I SEE THIS?", flush=True)
+    send_message(server, "Hi @beastco")
+    print(f"DO I SEE THIS?", flush=True)
+    run_bot(server)
 
-print("bottom of the file")

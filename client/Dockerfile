@@ -1,8 +1,9 @@
 FROM python:latest
 WORKDIR /usr/local/bin
 COPY . .
-RUN ["ls", "-ll"]
-RUN ["python", "--version"]
+RUN pip3 install -r requirements.txt
+EXPOSE 6667/tcp
+EXPOSE 42069/tcp
 CMD ["python", "client.py"]
 
 

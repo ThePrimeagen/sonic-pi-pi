@@ -6,14 +6,12 @@ networks:
     name: sonic_pi
 
 services:
-  client:
+  server:
     networks:
     - sonic_pi
     build: .
     environment:
     - PYTHONUNBUFFERED=1
-    - SERVER=server
-    env_file:
-    - .env
     ports:
-    - 6667:6667
+    - 42069:42069
+

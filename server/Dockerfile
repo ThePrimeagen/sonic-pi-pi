@@ -1,6 +1,6 @@
 FROM python:latest
 WORKDIR /usr/local/bin
 COPY . .
-CMD ["server.py", "-OPTIONAL_FLAG"]
-
-
+RUN pip3 install -r requirements.txt
+EXPOSE 42069/tcp
+CMD ["python", "server.py"]

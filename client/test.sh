@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source .env
+source .env-export
 python3 client.py
 
 
