@@ -72,8 +72,63 @@ def send_message(server, msg):
 def is_command_msg(msg):
     return msg[0] == COMMAND_TRIGGER and msg[1] != COMMAND_TRIGGER
 
-def run_command(websocket, user, cmd):
-    return
+tracks = [[
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0
+]]
+
+async def run_command(websocket, user, cmd):
+    try:
+        command, track, position  = cmd.split(" ")
+        if not command == "!play" and not command == "!stop":
+            return
+
+        # ignore this track item
+        track = int(track)
+
+        if len(tracks) <= track or track < 0:
+            print(f"{user} Invalid Track {track}", flush=True)
+            return
+
+        position = int(position)
+
+        t = tracks[track]
+        if len(t) <= position or position < 0:
+            print(f"{user} Invalid Position {position}", flush=True)
+            return
+
+        play = command == "!play"
+
+        t[position] = 5 if play else 0
+
+        content = f"""
+use_bpm 120                                                                     
+                                                                                               
+hat = [{",".join(list(map(str, t)))}]
+
+live_loop :pulse do                                                             
+sleep 4                                                                                              
+end                                                                             
+                                                                             
+define :run_p do |name, pattern|                                                
+sync :pulse                                                                   
+live_loop name do                                                             
+ pattern.each do |p|                                                         
+   sample :elec_soft_kick, amp: p/9.0                                           
+   sleep 0.25                                                                
+ end                                                                         
+end                                                                            
+end                                                                                 
+                                                                             
+run_p :poop, hat
+        """
+
+        await websocket.send(content)
+
+    except Exception as e:
+        print(f"Nice try guy {user} {str(e)}")
 
 def process_msg(irc_response):
     # TODO: improve the specificity of detecting Pings
@@ -112,7 +167,7 @@ async def run_bot(server):
         for message in messages:
             user, msg = process_msg(message)
             if user is not None and is_command_msg(msg):
-                run_command(user, msg)
+                await run_command(websocket, user, msg)
 
 async def main():
     server = _connect_to_twitch()

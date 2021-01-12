@@ -6,7 +6,8 @@ import os
 async def hello(websocket, path):
     while True:
         msg = await websocket.recv()
-        print(f"> {msg}")
+        print(f"> {msg}", flush=True)
+        os.system(f"echo \"{msg}\" | sonic_pi")
 
 start_server = websockets.serve(hello, "0.0.0.0", 42069)
 asyncio.get_event_loop().run_until_complete(start_server)
