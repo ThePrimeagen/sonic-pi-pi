@@ -2,12 +2,13 @@ import socket
 import os
 import asyncio
 import websockets
+import curses
 
 async def create_websocket(server):
     uri = f"ws://{server}:42069"
-    return await websockets.connect(uri) 
+    return await websockets.connect(uri, ping_interval=None)
 
-def log(string): 
+def log(string):
     print(string, flush=True)
 
 def missing_env_var(var_name):
@@ -17,7 +18,6 @@ def missing_env_var(var_name):
             "See README for more details."
         )
     )
-
 
 # Get the value for this here: https://twitchapps.com/tmi/
 if "TWITCH_OAUTH_TOKEN" not in os.environ:
@@ -72,12 +72,66 @@ def send_message(server, msg):
 def is_command_msg(msg):
     return msg[0] == COMMAND_TRIGGER and msg[1] != COMMAND_TRIGGER
 
-tracks = [[
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0
-]]
+def create_track_positions():
+    return [
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0
+    ]
+
+tracks = [
+    create_track_positions(),
+    create_track_positions(),
+    create_track_positions(),
+]
+
+# First ever beat
+"""
+tracks = [
+    [5,0,5,0,5,0,5,0,5,0,5,0,5,0,5,0],
+    [5,0,0,5,5,5,0,0,5,5,5,5,0,0,0,0],
+    [0,5,5,0,5,0,5,0,5,5,5,0,0,0,0,5],
+]
+"""
+
+track_names = [
+    ":drum_cymbal_closed",
+    ":drum_bass_soft",
+    ":drum_snare_soft",
+]
+
+def get_music():
+        content = f"""
+use_bpm 120
+
+        """
+        for i, x in enumerate(tracks):
+            content += f"""
+track{i} = [{",".join(list(map(str, x)))}]
+track{i}_name = {track_names[i]}
+"""
+
+        content += """
+live_loop :pulse do
+    sleep 4
+end
+
+define :run_p do |name, pattern, sample_name|
+    sync :pulse
+    live_loop name do
+        pattern.each do |p|
+            sample sample_name, amp: p/9.0
+            sleep 0.25
+        end
+    end
+end
+"""
+        for i, x in enumerate(tracks):
+            content += f"run_p :track{i}, track{i}, track{i}_name\n"
+
+    return content
+
 
 async def run_command(websocket, user, cmd):
     try:
@@ -103,34 +157,12 @@ async def run_command(websocket, user, cmd):
 
         t[position] = 5 if play else 0
 
-        content = f"""
-use_bpm 120                                                                     
-                                                                                               
-hat = [{",".join(list(map(str, t)))}]
-
-live_loop :pulse do                                                             
-sleep 4                                                                                              
-end                                                                             
-                                                                             
-define :run_p do |name, pattern|                                                
-sync :pulse                                                                   
-live_loop name do                                                             
- pattern.each do |p|                                                         
-   sample :elec_soft_kick, amp: p/9.0                                           
-   sleep 0.25                                                                
- end                                                                         
-end                                                                            
-end                                                                                 
-                                                                             
-run_p :poop, hat
-        """
-
-        await websocket.send(content)
+        await websocket.send(get_music())
 
     except Exception as e:
         print(f"Nice try guy {user} {str(e)}")
 
-def process_msg(irc_response):
+def process_msg(irc_response, server):
     # TODO: improve the specificity of detecting Pings
     if "PING" in irc_response:
         pong(server)
@@ -154,10 +186,12 @@ def _parse_user_and_msg(irc_response):
     msg = f"{first_word} {rest_of_the_message}"
     return user, msg
 
-
 async def run_bot(server):
     chat_buffer = ""
     websocket = await create_websocket(SERVER)
+
+    # clear previous state
+    await websocket.send(get_music())
 
     while True:
         chat_buffer = chat_buffer + server.recv(2048).decode("utf-8")
@@ -165,7 +199,7 @@ async def run_bot(server):
         chat_buffer = messages.pop()
 
         for message in messages:
-            user, msg = process_msg(message)
+            user, msg = process_msg(message, server)
             if user is not None and is_command_msg(msg):
                 await run_command(websocket, user, msg)
 
