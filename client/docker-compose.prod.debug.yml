@@ -1,0 +1,31 @@
+version: "3.5"
+
+networks:
+  sonic_pi:
+    external: true
+    name: sonic_pi
+
+services:
+  client:
+    build:
+      context: ./
+      dockerfile: debug.Dockerfile
+
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+
+    networks:
+    - sonic_pi
+
+    environment:
+    - PYTHONUNBUFFERED=1
+    - SERVER=192.168.0.100
+
+    env_file:
+    - .env
+
+    ports:
+    - 6667:6667
+    - 6900:6900
+
+

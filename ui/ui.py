@@ -2,7 +2,7 @@ import curses
 from curses import wrapper
 
 def main(stdscr):
-        # Clear screen
+    # Clear screen
     stdscr.clear()
 
     # This raises ZeroDivisionError when i == 10.
