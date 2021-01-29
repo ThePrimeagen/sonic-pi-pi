@@ -32,6 +32,7 @@ def create_twitch_connection():
 
         split_response = irc_response.split()
 
+        print(f"Messages from the twitch {split_response}")
         if len(split_response) < 4:
             return None, None
 
@@ -59,10 +60,19 @@ def create_twitch_connection():
             if len(messages) > 0:
                 yield process_msg(messages.pop(), twitch)
 
+            print("Awaiting chat", flush=True)
             chat_buffer = chat_buffer + twitch.recv(2048).decode("utf-8")
+            print("got chad", chat_buffer, flush=True)
             messages = chat_buffer.split("\r\n")
 
-            yield process_msg(messages.pop(), twitch)
+            if not chat_buffer.endswith("\r\n"):
+                chat_buffer = messages.pop()
+            else:
+                chat_buffer = ""
+
+            print("yielding messages", flush=True)
+            if len(messages) > 0:
+                yield process_msg(messages.pop(), twitch)
 
     return read_from_twitch
 

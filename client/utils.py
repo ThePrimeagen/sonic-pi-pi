@@ -18,10 +18,14 @@ if "BOT_NAME" not in os.environ:
 if "CHANNEL" not in os.environ:
     missing_env_var("CHANNEL")
 
-if "SERVER" not in os.environ:
-    missing_env_var("SERVER")
+if "MUSIC_SERVER" not in os.environ:
+    missing_env_var("MUSIC_SERVER")
 
-SERVER = os.environ["SERVER"]
+if "UI_SERVER" not in os.environ:
+    missing_env_var("UI_SERVER")
+
+MUSIC_SERVER = os.environ["MUSIC_SERVER"]
+UI_SERVER = os.environ["UI_SERVER"]
 
 TOKEN = os.environ["TWITCH_OAUTH_TOKEN"]
 

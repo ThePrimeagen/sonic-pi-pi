@@ -6,16 +6,17 @@ networks:
     name: sonic_pi
 
 services:
-  client:
+  ui:
     networks:
     - sonic_pi
     build: .
+    tty: true
+    stdin_open: true
+
     environment:
     - PYTHONUNBUFFERED=1
-    - MUSIC_SERVER=192.168.0.100:42069
-    - UI_SERVER=ui:6969
-    env_file:
-    - .env
+    - TERM=xterm
+
     ports:
-    - 6667:6667
+    - 6969:6969
 

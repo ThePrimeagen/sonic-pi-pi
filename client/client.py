@@ -3,10 +3,10 @@ import asyncio
 import websockets
 import curses
 from twitch import create_twitch_connection
-from utils import SERVER
+from utils import MUSIC_SERVER, UI_SERVER
 
 async def create_websocket(server):
-    uri = f"ws://{server}:42069"
+    uri = f"ws://{server}"
     return await websockets.connect(uri, ping_interval=None)
 
 def log(string):
@@ -41,6 +41,9 @@ track_names = [
     ":drum_snare_soft",
 ]
 
+def get_state():
+    return "hello, world"
+
 def get_music():
     content = f"""
 use_bpm 120
@@ -72,7 +75,7 @@ end
 
     return content
 
-async def run_command(websocket, user, cmd):
+def run_command(user, cmd):
     try:
         command, track, position  = cmd.split(" ")
         if not command == "!play" and not command == "!stop":
@@ -95,11 +98,12 @@ async def run_command(websocket, user, cmd):
         play = command == "!play"
 
         t[position] = 5 if play else 0
-
-        await websocket.send(get_music())
+        return True
 
     except Exception as e:
         print(f"Nice try guy {user} {str(e)}")
+
+    return False
 
 COMMAND_TRIGGER = "!"
 
@@ -107,15 +111,27 @@ def is_command_msg(msg):
     return msg[0] == COMMAND_TRIGGER and msg[1] != COMMAND_TRIGGER
 
 async def run_bot(twitch):
-    websocket = await create_websocket(SERVER)
+    music_server = await create_websocket(MUSIC_SERVER)
+    ui_server = await create_websocket(UI_SERVER)
 
     # clear previous state
-    await websocket.send(get_music())
+    await music_server.send(get_music())
+    log("About to wait for ui server")
+    await ui_server.send(get_state())
+    log("Done waiting for ui servec")
 
     while True:
+        # TODO: Make this async generator...
+        log("Awaiting twitch message")
         user, msg = next(twitch)
+        print("Got twitch message", msg, "from", user, flush=True)
         if user is not None and is_command_msg(msg):
-            await run_command(websocket, user, msg)
+            if run_command(user, msg):
+                log("About to send music to music_server")
+                await music_server.send(get_music())
+                log("About to send state to state_server")
+                await ui_server.send(get_state())
+                log("Re-running twitch loop")
 
 async def main():
     twitch = create_twitch_connection()
@@ -124,5 +140,3 @@ async def main():
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
-
-
