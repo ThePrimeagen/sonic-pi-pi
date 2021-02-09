@@ -60,9 +60,7 @@ def create_twitch_connection():
             if len(messages) > 0:
                 yield process_msg(messages.pop(), twitch)
 
-            print("Awaiting chat", flush=True)
             chat_buffer = chat_buffer + twitch.recv(2048).decode("utf-8")
-            print("got chad", chat_buffer, flush=True)
             messages = chat_buffer.split("\r\n")
 
             if not chat_buffer.endswith("\r\n"):
@@ -70,28 +68,13 @@ def create_twitch_connection():
             else:
                 chat_buffer = ""
 
-            print("yielding messages", flush=True)
             if len(messages) > 0:
                 yield process_msg(messages.pop(), twitch)
 
     return read_from_twitch
 
-"""
-async def tcp_echo_client(message):
-    reader, writer = await asyncio.open_connection(
-        '127.0.0.1', 8888)
+COMMAND_TRIGGER = "!"
 
-    print(f'Send: {message!r}')
-    writer.write(message.encode())
-    await writer.drain()
-
-    data = await reader.read(100)
-    print(f'Received: {data.decode()!r}')
-
-    print('Close the connection')
-    writer.close()
-    await writer.wait_closed()
-
-asyncio.run(tcp_echo_client('Hello World!'))
-"""
+def is_command_msg(msg: str) -> str:
+    return msg[0] == COMMAND_TRIGGER and msg[1] != COMMAND_TRIGGER
 

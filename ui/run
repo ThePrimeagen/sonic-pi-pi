@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+docker build . -t ui 
+docker run -it -p 6969:6969 ui 
+
+
+
