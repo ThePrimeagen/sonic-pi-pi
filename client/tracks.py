@@ -14,6 +14,11 @@ class TrackList:
     track_names: TrackNames
 
     def __init__(self):
+        self.reset()
+
+    def reset(self) -> None:
+        # This is 4 whole notes
+        # TODO: This is 16 whole notes
         self.tracks = [
             [0] * 32,
             [0] * 16,

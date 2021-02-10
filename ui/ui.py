@@ -20,12 +20,10 @@ logger.addHandler(logging.StreamHandler())
 """
 
 def fill_space(track_name: str, length: int) -> str:
-    out = track_name
     diff = length - len(track_name)
-    for _ in range(diff):
-        out += " "
+    sep = ' ' if diff > 0 else ''
 
-    return out
+    return track_name + sep * diff
 
 stdscr = None
 async def create_ui_server(websocket, path):
@@ -41,14 +39,19 @@ async def create_ui_server(websocket, path):
             stdscr.clear()
 
             # This raises ZeroDivisionError when i == 10.
-            parsed = []
-            most_length = max(len(x) for x in state.track_names)
+            title_length = 20
+            content_length = 63
+            sep = "|"
+            parsed = [
+                f"|{'-' * (title_length + 2)}|{'-' * (content_length + 2)}|",
+                f"|{' ' * (title_length + 2)}| {'   .   .   .   '.join([str(x) for x in [1, 2, 3, 4, '|']])}"
+            ]
 
             for i in range(0, len(state.tracks)):
                 separator = '   ' if len(state.tracks[i]) == 16 else ' '
-                tracks = separator.join([str(x) for x in state.tracks[i]])
-                track_name = fill_space(state.track_names[i], most_length)
-                parsed.append(f"{track_name}: {tracks}")
+                tracks = fill_space(separator.join([str(x) for x in state.tracks[i]]), content_length)
+                track_name = fill_space(state.track_names[i], title_length)
+                parsed.append(f"| {track_name} | {tracks} |")
 
             for i, out in enumerate(parsed):
                 stdscr.addstr(i, 0, out) 

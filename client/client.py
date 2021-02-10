@@ -32,6 +32,18 @@ tracks = [
 ]
 """
 
+priviledge_commands = ["!reset"]
+privildeged_users = ["theprimeagen"]
+def is_priviledge_command(user: str, msg: str) -> bool:
+    print("is_priviledge_command", msg, priviledge_commands, flush=True)
+    return msg in priviledge_commands and user in privildeged_users
+
+def run_priviledge_command(user: str, msg: str, track_list: TrackList) -> None:
+    print("run_priviledge_command", user, msg, flush=True)
+    if msg == "!reset":
+        print("run_priviledge_command#reset", flush=True)
+        track_list.reset()
+
 def string_state(state: TrackState) -> str: 
     return dumps(asdict(state))
 
@@ -49,7 +61,16 @@ async def run_bot(twitch):
         user, msg = next(twitch)
         if user is not None and is_command_msg(msg):
             print("Got twitch message", msg, "from", user, flush=True)
-            if track_list.run_command(user, msg):
+
+            print("is_priv", user, msg, flush=True)
+            if is_priviledge_command(user, msg):
+                run_priviledge_command(user, msg, track_list)
+
+                # assume a required state update
+                await music_server.send(track_list.get_music())
+                await ui_server.send(string_state(track_list.get_state()))
+
+            elif track_list.run_command(user, msg):
                 await music_server.send(track_list.get_music())
                 await ui_server.send(string_state(track_list.get_state()))
 

@@ -37,7 +37,7 @@ def create_twitch_connection():
             return None, None
 
         user, msg = _parse_user_and_msg(irc_response)
-        return user, msg
+        return user.strip(), msg.strip()
 
 
 # TODO: refactor this sillyness
