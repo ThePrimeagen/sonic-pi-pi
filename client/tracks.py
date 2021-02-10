@@ -1,5 +1,6 @@
 from typing import List 
 from dataclasses import dataclass
+import traceback
 
 TrackPositions = List[int]
 TrackNames = List[str]
@@ -68,31 +69,37 @@ end
 
     def run_command(self, user, cmd):
         try:
-            command, track, position  = cmd.split(" ")
+            command, track, *position  = cmd.split(" ")
             if not command == "!play" and not command == "!stop":
                 return
 
             # ignore this track item
-            track = int(track)
+            if track in self.track_names:
+                track = self.track_names.index(track)
+            else:
+                track = int(track)
 
             if len(self.tracks) <= track or track < 0:
                 print(f"{user} Invalid Track {track}", flush=True)
                 return
 
-            position = int(position)
+            position = [int(x) for x in position]
 
             t = self.tracks[track]
-            if len(t) <= position or position < 0:
-                print(f"{user} Invalid Position {position}", flush=True)
-                return
-
             play = command == "!play"
 
-            t[position] = 5 if play else 0
+            for pos in position:
+                if len(t) <= pos or pos < 0:
+                    print(f"{user} Invalid Position {position}", flush=True)
+                    continue
+
+                t[pos] = 5 if play else 0
+
             return True
 
         except Exception as e:
-            print(f"Nice try guy {user} {str(e)}")
+            print(f"Nice try guy {str(e)}")
+            print(traceback.format_exc())
 
         return False
 

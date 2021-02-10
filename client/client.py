@@ -2,6 +2,7 @@ import socket
 import asyncio
 import websockets
 import curses
+import traceback
 from twitch import create_twitch_connection, is_command_msg
 from utils import MUSIC_SERVER, UI_SERVER
 from tracks import TrackList, TrackState
